@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { log } from 'console';
 import { Observable } from 'rxjs';
 import { AuthService } from 'src/auth/auth.service';
 
@@ -22,6 +23,8 @@ export class AuthGuard implements CanActivate {
 
     const token = this.extractTokenFromHeader(request);
 
+    log("AUTH TOKEN", token);
+
     if(!token) {
       throw new UnauthorizedException('No hay bearer Token');
     }
@@ -38,13 +41,14 @@ export class AuthGuard implements CanActivate {
       const user = await this.authService.findUserById( payload.id );
 
       if ( !user ) throw new UnauthorizedException('No existe el usuario');
-      console.log("EK USER", user.name);
+      console.log("EK USER 1", user.name);
       if ( !user.isActive ) throw new UnauthorizedException('No esta activo el usario');
 
-      console.log("EK USER", payload.id);
-      console.log("EK USER", request['user']);
-
+      console.log("EK USER 2", payload.id);
+      
       request['user'] = user;
+
+      console.log("EK USER 3", user);
 
  
     } catch (error) {

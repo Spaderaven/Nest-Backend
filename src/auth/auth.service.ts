@@ -7,6 +7,7 @@ import { User } from './entities/user.entity';
 import { Model } from 'mongoose';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
+import { log } from 'console';
 
 
 
@@ -54,6 +55,10 @@ export class AuthService {
 
     let user = await this.userModel.findOne({ email });
 
+
+
+    log("USER ------------------------------", user.id); 
+
     if (!user) {
       throw new UnauthorizedException ('Correo no registrado');
     }
@@ -69,9 +74,23 @@ export class AuthService {
   }
 
   getJwtToken(user) {
+
+    log("USER JWT", user.id);
+    log("USER JWT2", user._id.toString());
+
     let payload = { email: user.email, id: user.id };
+
+    if(payload.id == undefined) {
+      payload.id = user._id.toString();
+    }
+
+    log("PAYLOAD", payload);
+
+
     
     let token = this.jwtService.sign(payload);
+
+    log("TOKEN A MANDAR", token);
 
     return token;
 
