@@ -7,7 +7,8 @@ import { User } from './entities/user.entity';
 import { Model } from 'mongoose';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import { log } from 'console';
+
+import * as bcrypt from 'bcryptjs';
 
 
 
@@ -25,11 +26,30 @@ export class AuthService {
 
 
   async create(CreateUserDto: CreateUserDto) {
+    
+    try {
+
     console.log(CreateUserDto)
 
-    const newUser = new this.userModel(CreateUserDto);
+    const { password, ...userData} = CreateUserDto;
+
+    const newUser = new this.userModel(
+      {
+        ...userData,
+        password: bcrypt.hashSync(password, 10)
+      }
+    );
 
     return await newUser.save();
+      
+    } catch (error) {
+      if(error.code === 11000) {
+        throw new UnauthorizedException ('Email already exists');
+      }
+      throw new UnauthorizedException ('Error', error);
+    }
+
+    
 
   }
 
@@ -53,17 +73,17 @@ export class AuthService {
 
     let { email, password } = LoginDto;
 
-    let user = await this.userModel.findOne({ email });
+    const user = await this.userModel.findOne({ email });
 
+    console.log("USER", user);
 
-
-    log("USER ------------------------------", user.id); 
-
+     
     if (!user) {
       throw new UnauthorizedException ('Correo no registrado');
     }
 
-    if (user.password !== password) {
+    if ( !bcrypt.compareSync(password, user.password) ) {
+      console.log(password, user.password);
       throw new UnauthorizedException ('Contraseña incorrecta');
     }
 
@@ -75,8 +95,8 @@ export class AuthService {
 
   getJwtToken(user) {
 
-    log("USER JWT", user.id);
-    log("USER JWT2", user._id.toString());
+    console.log("USER JWT", user.id);
+    console.log("USER JWT2", user._id.toString());
 
     let payload = { email: user.email, id: user.id };
 
@@ -84,13 +104,11 @@ export class AuthService {
       payload.id = user._id.toString();
     }
 
-    log("PAYLOAD", payload);
-
-
+    console.log("PAYLOAD", payload);
     
     let token = this.jwtService.sign(payload);
 
-    log("TOKEN A MANDAR", token);
+    console.log("TOKEN A MANDAR", token);
 
     return token;
 
